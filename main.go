@@ -53,11 +53,7 @@ func init() {
 }
 
 func vendorSrc(vendor string) string {
-	if go15VendorExperimentEnv {
-		return vendor
-	} else {
-		return filepath.Join(vendor, "src")
-	}
+	return filepath.Join(vendor, "src")
 }
 
 func main() {
@@ -77,8 +73,10 @@ func main() {
 	var err error
 	subArgs := flag.Args()[1:]
 	switch flag.Arg(0) {
+	case "fetch", "f":
+		err = fetchAndInstall(subArgs, false)
 	case "install", "i":
-		err = install(subArgs)
+		err = fetchAndInstall(subArgs, true)
 	case "build", "b":
 		err = run(append([]string{"go", "build"}, subArgs...), None)
 	case "test", "t":

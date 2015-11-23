@@ -321,7 +321,7 @@ func readdirnames(dirname string) ([]string, error) {
 	return list, nil
 }
 
-func install(args []string) error {
+func fetchAndInstall(args []string, install bool) error {
 	allGoms, err := parseGomfile("Gomfile")
 	if err != nil {
 		return err
@@ -386,15 +386,17 @@ func install(args []string) error {
 	}
 
 	// 4. Build and install
-	for _, gom := range goms {
-		if skipdep, ok := gom.options["skipdep"].(string); ok {
-			if skipdep == "true" {
-				continue
+	if install {
+		for _, gom := range goms {
+			if skipdep, ok := gom.options["skipdep"].(string); ok {
+				if skipdep == "true" {
+					continue
+				}
 			}
-		}
-		err = gom.Build(args)
-		if err != nil {
-			return err
+			err = gom.Build(args)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -406,4 +408,16 @@ func install(args []string) error {
 	}
 
 	return nil
+}
+
+func removeGetArgs(args []string) []string {
+	ret := make([]string, 0, len(args))
+
+	for _, v := range args {
+		if "-insecure" != v {
+			ret = append(ret, v)
+		}
+	}
+
+	return ret
 }

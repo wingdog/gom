@@ -134,13 +134,27 @@ func genGomfileLock() error {
 
 	for _, gom := range goms {
 		var vcs *vcsCmd
-		p := filepath.Join(vendorSrc(vendor), gom.name)
-		if isDir(filepath.Join(p, ".git")) {
-			vcs = git
-		} else if isDir(filepath.Join(p, ".hg")) {
-			vcs = hg
-		} else if isDir(filepath.Join(p, ".bzr")) {
-			vcs = bzr
+		name := gom.name
+		var p string
+		for {
+			p = filepath.Join(vendorSrc(vendor), name)
+			if isDir(filepath.Join(p, ".git")) {
+				vcs = git
+			} else if isDir(filepath.Join(p, ".hg")) {
+				vcs = hg
+			} else if isDir(filepath.Join(p, ".bzr")) {
+				vcs = bzr
+			}
+
+			if nil != vcs {
+				break
+			}
+
+			name = filepath.Dir(name)
+			fmt.Println(name)
+			if "" == name {
+				break
+			}
 		}
 		if vcs != nil {
 			rev, err := vcs.Revision(p)
