@@ -53,7 +53,11 @@ func init() {
 }
 
 func vendorSrc(vendor string) string {
-	return filepath.Join(vendor, "src")
+	if go15VendorExperimentEnv {
+		return vendor
+	} else {
+		return filepath.Join(vendor, "src")
+	}
 }
 
 func main() {

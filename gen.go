@@ -151,8 +151,7 @@ func genGomfileLock() error {
 			}
 
 			name = filepath.Dir(name)
-			fmt.Println(name)
-			if "" == name {
+			if "." == name {
 				break
 			}
 		}
