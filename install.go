@@ -103,6 +103,13 @@ func (gom *Gom) Clone(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	//ToDo: do not download again, any side effect?
+	srcdir := filepath.Join(vendor, "src", gom.name)
+	if isDir(srcdir) {
+		return nil
+	}
+
 	if command, ok := gom.options["command"].(string); ok {
 		target, ok := gom.options["target"].(string)
 		if !ok {
@@ -158,8 +165,15 @@ func (gom *Gom) Clone(args []string) error {
 	cmdArgs = append(cmdArgs, args...)
 	cmdArgs = append(cmdArgs, gom.name)
 
-	fmt.Printf("downloading %s\n", gom.name)
-	return run(cmdArgs, Blue)
+	//ToDo: retry once to work around this https://github.com/golang/go/issues/12573
+	for i := 0; i < 2; i++ {
+		fmt.Printf("downloading %s\n", gom.name)
+		if err = run(cmdArgs, Blue); nil == err {
+			return nil
+		}
+	}
+
+	return err
 }
 
 func (gom *Gom) pullPrivate(srcdir string) (err error) {
