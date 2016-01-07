@@ -108,8 +108,33 @@ func genGomfile() error {
 	return nil
 }
 
+func getVCSRoot(vendor, name string) (string, *vcsCmd) {
+	for {
+		var vcs *vcsCmd
+		p := filepath.Join(vendorSrc(vendor), name)
+		if isDir(filepath.Join(p, ".git")) {
+			vcs = git
+		} else if isDir(filepath.Join(p, ".hg")) {
+			vcs = hg
+		} else if isDir(filepath.Join(p, ".bzr")) {
+			vcs = bzr
+		}
+
+		if nil != vcs {
+			return p, vcs
+		}
+
+		name = filepath.Dir(name)
+		if "." == name {
+			break
+		}
+	}
+
+	return "", nil
+}
+
 func genGomfileLock() error {
-	allGoms, err := parseGomfile("Gomfile")
+	allGoms, err := parseGom("Gomfile", false)
 	if err != nil {
 		return err
 	}
@@ -133,34 +158,12 @@ func genGomfileLock() error {
 	}
 
 	for _, gom := range goms {
-		var vcs *vcsCmd
-		name := gom.name
-		var p string
-		for {
-			p = filepath.Join(vendorSrc(vendor), name)
-			if isDir(filepath.Join(p, ".git")) {
-				vcs = git
-			} else if isDir(filepath.Join(p, ".hg")) {
-				vcs = hg
-			} else if isDir(filepath.Join(p, ".bzr")) {
-				vcs = bzr
-			}
-
-			if nil != vcs {
-				break
-			}
-
-			name = filepath.Dir(name)
-			if "." == name {
-				break
-			}
-		}
+		p, vcs := getVCSRoot(vendor, gom.name)
 		if vcs != nil {
 			rev, err := vcs.Revision(p)
 			if err == nil && rev != "" {
 				gom.options["commit"] = rev
 			}
-
 		}
 	}
 	f, err := os.Create("Gomfile.lock")
@@ -176,5 +179,9 @@ func genGomfileLock() error {
 		}
 	}
 	fmt.Println("Gomfile.lock is generated")
+
+	//remove internal roots after retrieving versions
+	os.RemoveAll(filepath.Join(vendorSrc(vendor), internalRoots))
+
 	return nil
 }

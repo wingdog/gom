@@ -103,13 +103,26 @@ type Gom struct {
 }
 
 func parseGomfile(filename string) ([]Gom, error) {
-	f, err := os.Open(filename + ".lock")
-	if err != nil {
-		f, err = os.Open(filename)
+	return parseGom(filename, true)
+}
+
+func parseGom(filename string, checkLock bool) ([]Gom, error) {
+	var (
+		f   *os.File
+		err error
+	)
+	if checkLock {
+		f, err = os.Open(filename + ".lock")
 		if err != nil {
-			return nil, err
+			f, err = os.Open(filename)
 		}
+	} else {
+		f, err = os.Open(filename)
 	}
+	if err != nil {
+		return nil, err
+	}
+
 	br := bufio.NewReader(f)
 
 	goms := make([]Gom, 0)

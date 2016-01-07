@@ -38,6 +38,7 @@ var customGroups = flag.String("groups", "", "comma-separated list of Gomfile gr
 var customGroupList []string
 var vendorFolder string
 var go15VendorExperimentEnv bool
+var internalRoots string
 
 func init() {
 	go15VendorExperimentEnv = len(os.Getenv("GO15VENDOREXPERIMENT")) > 0
@@ -50,6 +51,7 @@ func init() {
 			vendorFolder = "_vendor"
 		}
 	}
+	internalRoots = os.Getenv("GOM_INTERNAL_ROOTS")
 }
 
 func vendorSrc(vendor string) string {
@@ -58,6 +60,10 @@ func vendorSrc(vendor string) string {
 	} else {
 		return filepath.Join(vendor, "src")
 	}
+}
+
+func isInternal(name string) bool {
+	return strings.HasPrefix(name, internalRoots)
 }
 
 func main() {
@@ -78,9 +84,9 @@ func main() {
 	subArgs := flag.Args()[1:]
 	switch flag.Arg(0) {
 	case "fetch", "f":
-		err = fetchAndInstall(subArgs, false)
+		err = fetchAndInstall(subArgs, true, false)
 	case "install", "i":
-		err = fetchAndInstall(subArgs, true)
+		err = fetchAndInstall(subArgs, true, true)
 	case "build", "b":
 		err = run(append([]string{"go", "build"}, subArgs...), None)
 	case "test", "t":
@@ -103,6 +109,7 @@ func main() {
 			usage()
 		}
 	case "lock", "l":
+		err = fetchAndInstall(subArgs, false, false)
 		err = genGomfileLock()
 	default:
 		usage()

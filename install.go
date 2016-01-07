@@ -335,8 +335,22 @@ func readdirnames(dirname string) ([]string, error) {
 	return list, nil
 }
 
-func fetchAndInstall(args []string, install bool) error {
-	allGoms, err := parseGomfile("Gomfile")
+func isUpdate(gom Gom) bool {
+	if isInternal(gom.name) {
+		return true
+	}
+
+	for _, option := range gom.options {
+		if "-u" == option {
+			return true
+		}
+	}
+
+	return false
+}
+
+func fetchAndInstall(args []string, checkLock, install bool) error {
+	allGoms, err := parseGom("Gomfile", checkLock)
 	if err != nil {
 		return err
 	}
@@ -374,6 +388,13 @@ func fetchAndInstall(args []string, install bool) error {
 			}
 		}
 		goms = append(goms, gom)
+		//remove repo to be updated
+		if isUpdate(gom) {
+			p, _ := getVCSRoot(vendor, gom.name)
+			if "" != p {
+				err := os.RemoveAll(filepath.Join(vendor, gom.name))
+			}
+		}
 	}
 
 	if go15VendorExperimentEnv {
@@ -422,16 +443,4 @@ func fetchAndInstall(args []string, install bool) error {
 	}
 
 	return nil
-}
-
-func removeGetArgs(args []string) []string {
-	ret := make([]string, 0, len(args))
-
-	for _, v := range args {
-		if "-insecure" != v {
-			ret = append(ret, v)
-		}
-	}
-
-	return ret
 }
