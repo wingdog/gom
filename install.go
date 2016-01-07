@@ -11,6 +11,7 @@ import (
 )
 
 type vcsCmd struct {
+	dir          string
 	checkout     []string
 	update       []string
 	revision     []string
@@ -19,18 +20,21 @@ type vcsCmd struct {
 
 var (
 	hg = &vcsCmd{
+		".hg",
 		[]string{"hg", "update"},
 		[]string{"hg", "pull"},
 		[]string{"hg", "id", "-i"},
 		"^(.+)$",
 	}
 	git = &vcsCmd{
+		".git",
 		[]string{"git", "checkout", "-q"},
 		[]string{"git", "fetch"},
 		[]string{"git", "rev-parse", "HEAD"},
 		"^(.+)$",
 	}
 	bzr = &vcsCmd{
+		".bzr",
 		[]string{"bzr", "revert", "-r"},
 		[]string{"bzr", "pull"},
 		[]string{"bzr", "log", "-r-1", "--line"},
@@ -392,7 +396,7 @@ func fetchAndInstall(args []string, checkLock, install bool) error {
 		if isUpdate(gom) {
 			p, _ := getVCSRoot(vendor, gom.name)
 			if "" != p {
-				err := os.RemoveAll(filepath.Join(vendor, gom.name))
+				os.RemoveAll(filepath.Join(vendor, gom.name))
 			}
 		}
 	}

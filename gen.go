@@ -133,6 +133,15 @@ func getVCSRoot(vendor, name string) (string, *vcsCmd) {
 	return "", nil
 }
 
+func sanitize(vendor string, goms []Gom) {
+	for _, gom := range goms {
+		p, vcs := getVCSRoot(vendor, gom.name)
+		if vcs != nil {
+			os.RemoveAll(filepath.Join(p, vcs.dir))
+		}
+	}
+}
+
 func genGomfileLock() error {
 	allGoms, err := parseGom("Gomfile", false)
 	if err != nil {
@@ -182,6 +191,9 @@ func genGomfileLock() error {
 
 	//remove internal roots after retrieving versions
 	os.RemoveAll(filepath.Join(vendorSrc(vendor), internalRoots))
+
+	//sanitize rest of the repos
+	sanitize(vendor, goms)
 
 	return nil
 }
